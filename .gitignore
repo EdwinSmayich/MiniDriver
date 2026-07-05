@@ -1,0 +1,16 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
+# Build output (Visual Studio / MSBuild)
+x64/
+Win32/
+.vs/
+
+# IDE user-specific settings
+*.user
+
+# Generated output images
+*.ppm

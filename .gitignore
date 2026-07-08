@@ -17,3 +17,4 @@ Win32/
 
 # Duplicate Rider module folder created when opening the project subfolder directly
 /MiniDriver/.idea/
+.idea/

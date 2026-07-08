@@ -34,12 +34,18 @@ int main()
     FFrameBuffer FrameBuffer(Width, Height);
     FrameBuffer.Clear(WhiteColor);
 
-    glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(-30.0f, -20.f, 0.0f));
-    
-    FScreenVertex ScreenVertexA = TransformVertex(A, Model);
-    FScreenVertex ScreenVertexB = TransformVertex(B, Model);
-    FScreenVertex ScreenVertexC = TransformVertex(C, Model);
-    
+    glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(30.0f, -20.f, 0.0f));
+
+    glm::vec3 Eye(60.0f, 0.0f, 100.0f);
+    glm::vec3 Target = Eye + glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 Up(0.0f, 1.0f, 0.0f);
+
+    glm::mat4 View = glm::lookAt(Eye, Target, Up);
+
+    FScreenVertex ScreenVertexA = TransformVertex(A, View * Model);
+    FScreenVertex ScreenVertexB = TransformVertex(B, View * Model);
+    FScreenVertex ScreenVertexC = TransformVertex(C, View * Model);
+
     FRasterizer Rasterizer;
     Rasterizer.DrawTriangle(FrameBuffer, ScreenVertexA, ScreenVertexB, ScreenVertexC);
 

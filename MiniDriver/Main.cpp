@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <cmath>
 
 constexpr size_t Width = 256;
 constexpr size_t Height = 256;
@@ -76,7 +77,7 @@ public:
             std::cerr << "Failed to open file: " << InPPMPath << '\n';
             return;
         }
-        
+
         Out << "P3\n";
         Out << Width << " " << Height << "\n";
         Out << "255\n";
@@ -151,13 +152,24 @@ public:
                 float WeightB = Edge1 / Area;
                 float WeightC = Edge2 / Area;
 
-                float InterpR = WeightA * A.Color.R + WeightB * B.Color.R + WeightC * C.Color.R;
-                float InterpG = WeightA * A.Color.G + WeightB * B.Color.G + WeightC * C.Color.G;
-                float InterpB = WeightA * A.Color.B + WeightB * B.Color.B + WeightC * C.Color.B;
+                float InterpR =
+                    WeightA * static_cast<float>(A.Color.R) +
+                    WeightB * static_cast<float>(B.Color.R) +
+                    WeightC * static_cast<float>(C.Color.R);
 
-                FColor TotalColor(static_cast<unsigned char>(InterpR + 0.5f),
-                                  static_cast<unsigned char>(InterpG + 0.5f),
-                                  static_cast<unsigned char>(InterpB + 0.5f));
+                float InterpG =
+                    WeightA * static_cast<float>(A.Color.G) +
+                    WeightB * static_cast<float>(B.Color.G) +
+                    WeightC * static_cast<float>(C.Color.G);
+
+                float InterpB =
+                    WeightA * static_cast<float>(A.Color.B) +
+                    WeightB * static_cast<float>(B.Color.B) +
+                    WeightC * static_cast<float>(C.Color.B);
+
+                FColor TotalColor(static_cast<unsigned char>(std::lround(InterpR)),
+                                  static_cast<unsigned char>(std::lround(InterpG)),
+                                  static_cast<unsigned char>(std::lround(InterpB)));
 
                 InFB.SetPixel(x, y, TotalColor);
             }
@@ -165,7 +177,7 @@ public:
     }
 
 private:
-    float EdgeFunction(const FVector2& A, const FVector2& B, const FVector2& P) const
+    static float EdgeFunction(const FVector2& A, const FVector2& B, const FVector2& P)
     {
         return (B.X - A.X) * (P.Y - A.Y) - (B.Y - A.Y) * (P.X - A.X);
     }

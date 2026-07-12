@@ -14,12 +14,12 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
         return;
     }
 
-    for (size_t y = 0; y < InFB.GetHeight(); ++y)
+    for (size_t Y = 0; Y < InFB.GetHeight(); ++Y)
     {
-        for (size_t x = 0; x < InFB.GetWidth(); ++x)
+        for (size_t X = 0; X < InFB.GetWidth(); ++X)
         {
-            glm::vec2 PixelPos(static_cast<float>(x) + 0.5f,
-                               static_cast<float>(y) + 0.5f);
+            glm::vec2 PixelPos(static_cast<float>(X) + 0.5f,
+                               static_cast<float>(Y) + 0.5f);
 
             float Edge0 = EdgeFunction(B.Position, C.Position, PixelPos);
             float Edge1 = EdgeFunction(C.Position, A.Position, PixelPos);
@@ -57,7 +57,7 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
                               static_cast<unsigned char>(std::lround(InterpG)),
                               static_cast<unsigned char>(std::lround(InterpB)));
 
-            InFB.SetPixel(x, y, TotalColor);
+            InFB.SetPixel(X, Y, TotalColor);
         }
     }
 }

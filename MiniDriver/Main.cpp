@@ -11,13 +11,23 @@
 
 constexpr size_t Width = 256;
 constexpr size_t Height = 256;
+constexpr glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 2.0f);
 
-FScreenVertex TransformVertex(const FVertex& InVertex, const glm::mat4& InModel)
+
+FScreenVertex TransformVertex(const FVertex& InVertex)
 {
-    glm::vec4 VertexLocal(InVertex.Position, 1.0f);
-    glm::vec4 Transformed = InModel * VertexLocal;
+    float RelativeX = InVertex.Position.x - CAMERA_POSITION.x;
+    float RelativeY = InVertex.Position.y - CAMERA_POSITION.y;
+    float RelativeZ = InVertex.Position.z - CAMERA_POSITION.z;
 
-    return FScreenVertex(Transformed.x, Transformed.y, InVertex.Color);
+    float Distance = -RelativeZ;
+    float ProjX = RelativeX / Distance;
+    float ProjY = RelativeY / Distance;
+
+    float ScreenX = (ProjX * 0.5f + 0.5f) * Width;
+    float ScreenY = (1.0f - (ProjY * 0.5f + 0.5f)) * Height;
+
+    return FScreenVertex(ScreenX, ScreenY, InVertex.Color);
 }
 
 int main()
@@ -27,24 +37,16 @@ int main()
     FColor GreenColor(0, 255, 0);
     FColor BlueColor(0, 0, 255);
 
-    FVertex A(glm::vec3(122.0f, 30.0f, 0.0f), RedColor);
-    FVertex B(glm::vec3(205.0f, 220.0f, 0.0f), GreenColor);
-    FVertex C(glm::vec3(50.0f, 220.0f, 0.0f), BlueColor);
-
     FFrameBuffer FrameBuffer(Width, Height);
     FrameBuffer.Clear(WhiteColor);
 
-    glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(30.0f, -20.f, 0.0f));
+    FVertex VertexA(glm::vec3(0.0f, 1.0f, 0.0f), RedColor);
+    FVertex VertexB(glm::vec3(1.0f, -1.0f, 0.0f), GreenColor);
+    FVertex VertexC(glm::vec3(-1.0f, -1.0f, 0.0f), BlueColor);
 
-    glm::vec3 Eye(60.0f, 0.0f, 100.0f);
-    glm::vec3 Target = Eye + glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 Up(0.0f, 1.0f, 0.0f);
-
-    glm::mat4 View = glm::lookAt(Eye, Target, Up);
-
-    FScreenVertex ScreenVertexA = TransformVertex(A, View * Model);
-    FScreenVertex ScreenVertexB = TransformVertex(B, View * Model);
-    FScreenVertex ScreenVertexC = TransformVertex(C, View * Model);
+    FScreenVertex ScreenVertexA = TransformVertex(VertexA);
+    FScreenVertex ScreenVertexB = TransformVertex(VertexB);
+    FScreenVertex ScreenVertexC = TransformVertex(VertexC);
 
     FRasterizer Rasterizer;
     Rasterizer.DrawTriangle(FrameBuffer, ScreenVertexA, ScreenVertexB, ScreenVertexC);
@@ -53,3 +55,18 @@ int main()
 
     return 0;
 }
+
+// FScreenVertex TransformVertex(const FVertex& InVertex, const glm::mat4& InMVP)
+// {
+//     glm::vec4 VertexLocal(InVertex.Position, 1.0f);
+//     glm::vec4 Clip = InMVP * VertexLocal;
+//     glm::vec3 NDC = glm::vec3(Clip) / Clip.w;
+//
+//     float ScreenX = (NDC.x * 0.5f + 0.5f) * Width;
+//     float ScreenY = (1.0f - (NDC.y * 0.5f + 0.5f)) * Height;
+//
+//     std::cout << "NDC=( " << NDC.x << ", " << NDC.y << ")" << "\n"
+//         << "Screen=( " << ScreenX << ", " << ScreenY << ")" << "\n\n";
+//
+//     return FScreenVertex(ScreenX, ScreenY, InVertex.Color);
+// }

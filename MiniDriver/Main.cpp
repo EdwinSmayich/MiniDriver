@@ -1,4 +1,7 @@
-#include <iostream>
+#include <filesystem>
+#include <string>
+#include <format>
+
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -35,7 +38,7 @@ int main()
     FColor BlueColor(0, 0, 255);
 
     FFrameBuffer FrameBuffer(Width, Height);
-    FrameBuffer.Clear(WhiteColor);
+    FRasterizer Rasterizer;
 
     FVertex VertexA(glm::vec3(0.0f, 1.0f, -1.0f), RedColor);
     FVertex VertexB(glm::vec3(1.0f, -1.0f, -1.0f), GreenColor);
@@ -43,20 +46,30 @@ int main()
     
     float Aspect = static_cast<float>(Width) / static_cast<float>(Height);
     
-    glm::mat4 Model = glm::rotate(glm::mat4(1.0f), glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 View = glm::translate(glm::mat4(1.0f), -CAMERA_POSITION);
     glm::mat4 Projection = glm::perspective(glm::radians(90.0f), Aspect, 0.1f, 100.0f);
     
-    glm::mat4 MVP = Projection * View * Model;
+    std::filesystem::create_directories("Output/Frames");
+    
+    constexpr int FrameCount = 36;
+    for (int Frame = 0; Frame < FrameCount; ++Frame)
+    {
+        float Angle = static_cast<float>(Frame) * (360.0f / FrameCount);
+        
+        glm::mat4 Model = glm::rotate(glm::mat4(1.0f), glm::radians(Angle), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 MVP = Projection * View * Model;
 
-    FScreenVertex ScreenVertexA = TransformVertex(VertexA, MVP);
-    FScreenVertex ScreenVertexB = TransformVertex(VertexB, MVP);
-    FScreenVertex ScreenVertexC = TransformVertex(VertexC, MVP);
+        FrameBuffer.Clear(WhiteColor);
+        
+        FScreenVertex ScreenVertexA = TransformVertex(VertexA, MVP);
+        FScreenVertex ScreenVertexB = TransformVertex(VertexB, MVP);
+        FScreenVertex ScreenVertexC = TransformVertex(VertexC, MVP);
+        
+        Rasterizer.DrawTriangle(FrameBuffer, ScreenVertexA, ScreenVertexB, ScreenVertexC);
 
-    FRasterizer Rasterizer;
-    Rasterizer.DrawTriangle(FrameBuffer, ScreenVertexA, ScreenVertexB, ScreenVertexC);
-
-    FrameBuffer.SavePPM("Output/FrameBuffer.ppm");
+        std::string FramesPath = std::format("Output/Frames/frame_{:03}.ppm", Frame);
+        FrameBuffer.SavePPM(FramesPath);
+    }
 
     return 0;
 }

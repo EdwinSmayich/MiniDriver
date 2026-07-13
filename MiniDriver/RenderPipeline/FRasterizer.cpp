@@ -38,26 +38,32 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
             float WeightB = Edge1 / Area;
             float WeightC = Edge2 / Area;
 
-            float InterpR =
-                WeightA * static_cast<float>(A.Color.R) +
-                WeightB * static_cast<float>(B.Color.R) +
-                WeightC * static_cast<float>(C.Color.R);
+            float Depth = (WeightA * A.Depth) + (WeightB * B.Depth) + (WeightC * C.Depth);
 
-            float InterpG =
-                WeightA * static_cast<float>(A.Color.G) +
-                WeightB * static_cast<float>(B.Color.G) +
-                WeightC * static_cast<float>(C.Color.G);
+            if (Depth < InFB.GetDepth(X, Y))
+            {
+                float InterpR =
+                    WeightA * static_cast<float>(A.Color.R) +
+                    WeightB * static_cast<float>(B.Color.R) +
+                    WeightC * static_cast<float>(C.Color.R);
 
-            float InterpB =
-                WeightA * static_cast<float>(A.Color.B) +
-                WeightB * static_cast<float>(B.Color.B) +
-                WeightC * static_cast<float>(C.Color.B);
+                float InterpG =
+                    WeightA * static_cast<float>(A.Color.G) +
+                    WeightB * static_cast<float>(B.Color.G) +
+                    WeightC * static_cast<float>(C.Color.G);
 
-            FColor TotalColor(static_cast<unsigned char>(std::lround(InterpR)),
-                              static_cast<unsigned char>(std::lround(InterpG)),
-                              static_cast<unsigned char>(std::lround(InterpB)));
+                float InterpB =
+                    WeightA * static_cast<float>(A.Color.B) +
+                    WeightB * static_cast<float>(B.Color.B) +
+                    WeightC * static_cast<float>(C.Color.B);
 
-            InFB.SetPixel(X, Y, TotalColor);
+                FColor TotalColor(static_cast<unsigned char>(std::lround(InterpR)),
+                                  static_cast<unsigned char>(std::lround(InterpG)),
+                                  static_cast<unsigned char>(std::lround(InterpB)));
+
+                InFB.SetPixel(X, Y, TotalColor);
+                InFB.SetDepth(X, Y, Depth);
+            }
         }
     }
 }

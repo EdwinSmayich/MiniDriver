@@ -1,0 +1,3 @@
+# GLM is a vendored third-party dependency (its docs are HTML) — exclude it
+# from GitHub's language stats so they reflect this project's own code.
+glm/** linguist-vendored

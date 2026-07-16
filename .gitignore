@@ -15,6 +15,8 @@ Win32/
 # Generated output images
 *.ppm
 *.gif
+# ...but keep the portfolio showcase assets
+!/assets/*.gif
 
 # Duplicate Rider module folder created when opening the project subfolder directly
 /MiniDriver/.idea/

@@ -4,7 +4,9 @@
 #include "../Resources/FColor.h"
 
 
-void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const FScreenVertex& B, const FScreenVertex& C) const
+void FRasterizer::DrawTriangle(FFrameBuffer& InFB,
+                               const FScreenVertex& A, const FScreenVertex& B, const FScreenVertex& C,
+                               const std::function<FColor(glm::vec2, FColor)>& InFragShader) const
 {
     float Area = EdgeFunction(A.Position, B.Position, C.Position);
 
@@ -53,8 +55,14 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
                     WeightB * B.UV.y * B.InterpW +
                     WeightC * C.UV.y * C.InterpW) / InvWInterp;
 
-                FColor Color = SampleTexture(U, V);
-                InFB.SetPixel(X, Y, Color);
+                FColor InterpColor(
+                    static_cast<unsigned char>(WeightA * A.Color.R + WeightB * B.Color.R + WeightC * C.Color.R),
+                    static_cast<unsigned char>(WeightA * A.Color.G + WeightB * B.Color.G + WeightC * C.Color.G),
+                    static_cast<unsigned char>(WeightA * A.Color.B + WeightB * B.Color.B + WeightC * C.Color.B));
+                
+                FColor FinalColor = InFragShader(glm::vec2(U, V), InterpColor);
+
+                InFB.SetPixel(X, Y, FinalColor);
                 InFB.SetDepth(X, Y, Depth);
             }
         }
@@ -64,16 +72,4 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
 float FRasterizer::EdgeFunction(const glm::vec2& A, const glm::vec2& B, const glm::vec2& P)
 {
     return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
-}
-
-FColor FRasterizer::SampleTexture(float InU, float InV)
-{
-    int Cell = (static_cast<int>(InU * 8.0f) + static_cast<int>(InV * 8.0f)) % 2;
-
-    if (Cell == 0)
-    {
-        return FColor(230, 230, 230);
-    }
-
-    return FColor(40, 40, 40);
 }

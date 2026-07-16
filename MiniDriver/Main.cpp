@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <iostream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -35,6 +36,27 @@ FScreenVertex TransformVertex(const FVertex& InVertex, const glm::mat4& InMVP)
     return FScreenVertex(ScreenX, ScreenY, Depth, InVertex.Color, InVertex.UV, InterpW);
 }
 
+FColor SampleTexture(const glm::vec2& InUV)
+{
+    int Cell = (static_cast<int>(InUV.x * 8.0f) + static_cast<int>(InUV.y * 8.0f)) % 2;
+
+    if (Cell == 0)
+    {
+        return FColor(230, 230, 230);
+    }
+
+    return FColor(30, 30, 30);
+}
+
+auto FragmentShader = [](const glm::vec2& InUV, const FColor& InLight) -> FColor
+{
+    FColor Texture = SampleTexture(InUV);
+
+    return FColor((Texture.R * InLight.R) / 255,
+                  (Texture.G * InLight.G) / 255,
+                  (Texture.B * InLight.B) / 255);
+};
+
 int main()
 {
     FColor BlackColor(0, 0, 0);
@@ -65,7 +87,7 @@ int main()
     FRasterizer Rasterizer;
 
     float Aspect = static_cast<float>(Width) / static_cast<float>(Height);
-    
+
     glm::mat4 View = glm::translate(glm::mat4(1.0f), -CAMERA_POSITION);
     glm::mat4 Projection = glm::perspective(glm::radians(90.0f), Aspect, 0.1f, 100.0f);
 
@@ -74,7 +96,8 @@ int main()
     std::filesystem::remove_all("Output/Frames");
     std::filesystem::create_directories("Output/Frames");
 
-    glm::vec3 LightDir = glm::normalize(glm::vec3(0.0f, 0.0f, 3.0f));
+    glm::vec3 LightDir = glm::normalize(glm::vec3(0.0f, 1.0f, 3.0f));
+
     constexpr int FrameCount = 36;
     for (int Frame = 0; Frame < FrameCount; ++Frame)
     {
@@ -84,7 +107,7 @@ int main()
 
         glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
         Model = glm::rotate(Model, glm::radians(Angle), glm::vec3(0.0f, 1.0f, 0.0f));
-        Model = glm::rotate(Model, glm::radians(40.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        Model = glm::rotate(Model, glm::radians(Angle), glm::vec3(1.0f, 0.0f, 0.0f));
 
         glm::mat4 MVP = Projection * View * Model;
 
@@ -93,23 +116,23 @@ int main()
             glm::vec3 WorldNormal = glm::normalize(glm::mat3(Model) * Face.Normal);
             float Brightness = std::max(0.0f, glm::dot(WorldNormal, LightDir));
 
-            FColor Lit(
-                static_cast<unsigned char>(Face.Color.R * Brightness),
-                static_cast<unsigned char>(Face.Color.G * Brightness),
-                static_cast<unsigned char>(Face.Color.B * Brightness));
+            FColor Light(
+                static_cast<unsigned char>(255 * Brightness),
+                static_cast<unsigned char>(255 * Brightness),
+                static_cast<unsigned char>(255 * Brightness));
 
-            FVertex V0(Corners[Face.A], Lit, glm::vec2(0.0f, 0.0f));
-            FVertex V1(Corners[Face.B], Lit, glm::vec2(1.0f, 0.0f));
-            FVertex V2(Corners[Face.C], Lit, glm::vec2(1.0f, 1.0f));
-            FVertex V3(Corners[Face.D], Lit, glm::vec2(0.0f, 1.0f));
+            FVertex V0(Corners[Face.A], Light, glm::vec2(0.0f, 0.0f));
+            FVertex V1(Corners[Face.B], Light, glm::vec2(1.0f, 0.0f));
+            FVertex V2(Corners[Face.C], Light, glm::vec2(1.0f, 1.0f));
+            FVertex V3(Corners[Face.D], Light, glm::vec2(0.0f, 1.0f));
 
             FScreenVertex ScreenV0 = TransformVertex(V0, MVP);
             FScreenVertex ScreenV1 = TransformVertex(V1, MVP);
             FScreenVertex ScreenV2 = TransformVertex(V2, MVP);
             FScreenVertex ScreenV3 = TransformVertex(V3, MVP);
 
-            Rasterizer.DrawTriangle(FrameBuffer, ScreenV0, ScreenV1, ScreenV2);
-            Rasterizer.DrawTriangle(FrameBuffer, ScreenV0, ScreenV2, ScreenV3);
+            Rasterizer.DrawTriangle(FrameBuffer, ScreenV0, ScreenV1, ScreenV2, FragmentShader);
+            Rasterizer.DrawTriangle(FrameBuffer, ScreenV0, ScreenV2, ScreenV3, FragmentShader);
         }
 
         std::string FramesPath = std::format("Output/Frames/frame_{:03}.ppm", Frame);

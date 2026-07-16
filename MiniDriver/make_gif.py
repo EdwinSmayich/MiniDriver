@@ -12,7 +12,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 FRAMES_DIR = os.path.join(HERE, "Output", "Frames")
 OUT_PATH = os.path.join(HERE, "Output", "animation.gif")
-DURATION_MS = 500   # длительность одного кадра; меньше = быстрее
+DURATION_MS = 60   # длительность одного кадра; меньше = быстрее
 
 files = sorted(glob.glob(os.path.join(FRAMES_DIR, "frame_*.ppm")))
 if not files:

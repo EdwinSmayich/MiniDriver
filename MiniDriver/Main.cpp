@@ -1,8 +1,4 @@
-#include <array>
 #include <filesystem>
-#include <string>
-#include <format>
-#include <iostream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,7 +11,7 @@
 
 constexpr size_t Width = 256;
 constexpr size_t Height = 256;
-constexpr glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 3.0f);;
+constexpr glm::vec3 CAMERA_POSITION(0.0f, 0.0f, 2.0f);;
 
 struct FFace
 {
@@ -31,11 +27,12 @@ FScreenVertex TransformVertex(const FVertex& InVertex, const glm::mat4& InMVP)
     float ProjX = Clip.x / Clip.w;
     float ProjY = Clip.y / Clip.w;
     float Depth = Clip.z / Clip.w;
+    float InterpW = 1.0f / Clip.w;
 
     float ScreenX = (ProjX * 0.5f + 0.5f) * Width;
     float ScreenY = (1.0f - (ProjY * 0.5f + 0.5f)) * Height;
 
-    return FScreenVertex(ScreenX, ScreenY, Depth, InVertex.Color);
+    return FScreenVertex(ScreenX, ScreenY, Depth, InVertex.Color, InVertex.UV, InterpW);
 }
 
 int main()
@@ -64,32 +61,20 @@ int main()
         {3, 2, 6, 7, MagentaColor, glm::vec3(0.0f, 1.0f, 0.0f)},
     };
 
-    // std::array Vertices =
-    // {
-    //     FVertex(Corners[0], RedColor),
-    //     FVertex(Corners[1], GreenColor),
-    //     FVertex(Corners[2], BlueColor),
-    //     FVertex(Corners[3], YellowColor),
-    //
-    //     FVertex(Corners[4], CyanColor),
-    //     FVertex(Corners[5], MagentaColor),
-    //     FVertex(Corners[6], WhiteColor),
-    //     FVertex(Corners[7], BlackColor)
-    // };
-
     FFrameBuffer FrameBuffer(Width, Height);
     FRasterizer Rasterizer;
 
     float Aspect = static_cast<float>(Width) / static_cast<float>(Height);
-
+    
     glm::mat4 View = glm::translate(glm::mat4(1.0f), -CAMERA_POSITION);
     glm::mat4 Projection = glm::perspective(glm::radians(90.0f), Aspect, 0.1f, 100.0f);
+
+    FrameBuffer.Clear(GreyColor);
 
     std::filesystem::remove_all("Output/Frames");
     std::filesystem::create_directories("Output/Frames");
 
     glm::vec3 LightDir = glm::normalize(glm::vec3(0.0f, 0.0f, 3.0f));
-
     constexpr int FrameCount = 36;
     for (int Frame = 0; Frame < FrameCount; ++Frame)
     {
@@ -97,7 +82,7 @@ int main()
 
         float Angle = static_cast<float>(Frame) * (360.0f / FrameCount);
 
-        glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+        glm::mat4 Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.0f));
         Model = glm::rotate(Model, glm::radians(Angle), glm::vec3(0.0f, 1.0f, 0.0f));
         Model = glm::rotate(Model, glm::radians(40.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -108,20 +93,15 @@ int main()
             glm::vec3 WorldNormal = glm::normalize(glm::mat3(Model) * Face.Normal);
             float Brightness = std::max(0.0f, glm::dot(WorldNormal, LightDir));
 
-            if (Frame == 0)
-            {
-                std::cout << "Edge brightness: " << Brightness << "\n";
-            }
-
             FColor Lit(
                 static_cast<unsigned char>(Face.Color.R * Brightness),
                 static_cast<unsigned char>(Face.Color.G * Brightness),
                 static_cast<unsigned char>(Face.Color.B * Brightness));
 
-            FVertex V0(Corners[Face.A], Lit);
-            FVertex V1(Corners[Face.B], Lit);
-            FVertex V2(Corners[Face.C], Lit);
-            FVertex V3(Corners[Face.D], Lit);
+            FVertex V0(Corners[Face.A], Lit, glm::vec2(0.0f, 0.0f));
+            FVertex V1(Corners[Face.B], Lit, glm::vec2(1.0f, 0.0f));
+            FVertex V2(Corners[Face.C], Lit, glm::vec2(1.0f, 1.0f));
+            FVertex V3(Corners[Face.D], Lit, glm::vec2(0.0f, 1.0f));
 
             FScreenVertex ScreenV0 = TransformVertex(V0, MVP);
             FScreenVertex ScreenV1 = TransformVertex(V1, MVP);

@@ -3,6 +3,7 @@
 
 
 class FFrameBuffer;
+struct FColor;
 struct FScreenVertex;
 
 class FRasterizer
@@ -12,4 +13,5 @@ public:
 
 private:
     static float EdgeFunction(const glm::vec2& A, const glm::vec2& B, const glm::vec2& P);
+    static FColor SampleTexture(float InU, float InV);
 };

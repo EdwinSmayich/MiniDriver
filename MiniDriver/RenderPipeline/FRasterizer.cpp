@@ -1,5 +1,4 @@
 ﻿#include "FRasterizer.h"
-#include <cmath>
 #include "../Output/FFrameBuffer.h"
 #include "../Resources/FScreenVertex.h"
 #include "../Resources/FColor.h"
@@ -42,26 +41,20 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
 
             if (Depth < InFB.GetDepth(X, Y))
             {
-                float InterpR =
-                    WeightA * static_cast<float>(A.Color.R) +
-                    WeightB * static_cast<float>(B.Color.R) +
-                    WeightC * static_cast<float>(C.Color.R);
+                float InvWInterp = (WeightA * A.InterpW) + (WeightB * B.InterpW) + (WeightC * C.InterpW);
 
-                float InterpG =
-                    WeightA * static_cast<float>(A.Color.G) +
-                    WeightB * static_cast<float>(B.Color.G) +
-                    WeightC * static_cast<float>(C.Color.G);
+                float U =
+                (WeightA * A.UV.x * A.InterpW +
+                    WeightB * B.UV.x * B.InterpW +
+                    WeightC * C.UV.x * C.InterpW) / InvWInterp;
 
-                float InterpB =
-                    WeightA * static_cast<float>(A.Color.B) +
-                    WeightB * static_cast<float>(B.Color.B) +
-                    WeightC * static_cast<float>(C.Color.B);
+                float V =
+                (WeightA * A.UV.y * A.InterpW +
+                    WeightB * B.UV.y * B.InterpW +
+                    WeightC * C.UV.y * C.InterpW) / InvWInterp;
 
-                FColor TotalColor(static_cast<unsigned char>(std::lround(InterpR)),
-                                  static_cast<unsigned char>(std::lround(InterpG)),
-                                  static_cast<unsigned char>(std::lround(InterpB)));
-
-                InFB.SetPixel(X, Y, TotalColor);
+                FColor Color = SampleTexture(U, V);
+                InFB.SetPixel(X, Y, Color);
                 InFB.SetDepth(X, Y, Depth);
             }
         }
@@ -71,4 +64,16 @@ void FRasterizer::DrawTriangle(FFrameBuffer& InFB, const FScreenVertex& A, const
 float FRasterizer::EdgeFunction(const glm::vec2& A, const glm::vec2& B, const glm::vec2& P)
 {
     return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
+}
+
+FColor FRasterizer::SampleTexture(float InU, float InV)
+{
+    int Cell = (static_cast<int>(InU * 8.0f) + static_cast<int>(InV * 8.0f)) % 2;
+
+    if (Cell == 0)
+    {
+        return FColor(230, 230, 230);
+    }
+
+    return FColor(40, 40, 40);
 }
